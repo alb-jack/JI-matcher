@@ -3,9 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>JI Match</title>
 </head>
 <body>
-    
+
+<textarea id="job_description"></textarea>
+
+<button type="button" id="submit">Submit Description</button>
+<div id="display"></div>
+
+<script>
+    const button = document.getElementById('submit')
+
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        const formData = new FormData()
+        formData.append("job_description", document.getElementById("job_description").value)
+
+        fetch('/analyze', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("display").innerText = data.result
+        })
+    })
+
+</script>    
 </body>
 </html>
