@@ -19,6 +19,7 @@ def load_resume():
     return text
 
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -27,6 +28,11 @@ def index():
 def analyze():
     job_description = request.form.get("job_description")
     resume = load_resume()
+    cover_letter_override = request.form.get("force_cover_letter")
+    if cover_letter_override:
+        override_text = "Always generate a cover letter regardless of fit score."   
+    else:
+        override_text = "Use your judgment on whether a cover letter is needed."
     prompt = f"""
     You are a senior hiring manager and recruiter with 15+ years of experience. You evaluate candidates ruthlessly but fairly. You do not sugarcoat, you do not try to be nice, and you do not give generic advice. You think in terms of hiring decisions, risk, and signal strength.
     Evaluate the candidate below against the job description as if you are deciding whether to interview them.
@@ -50,12 +56,13 @@ def analyze():
     * No motivational tone.
     * Assume the reader is smart and wants truth, not encouragement.
     * If the candidate has no realistic chance, say so plainly and explain why in one sentence.
+    *OVERRIDE: {override_text}
     JOB DESCRIPTION: {job_description}
     RESUME: {resume}
     """
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1024,
+        max_tokens=2048,
         messages=[{"role": "user", "content": prompt}]
     )
     
