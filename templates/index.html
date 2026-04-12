@@ -10,14 +10,31 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center mb-4">ResuMatch</h1>
-        <div class ="card p-4">
-            <textarea id="job_description" class="form-control mb-3" rows="12" placeholder="Paste job description here..."></textarea>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="force_cover_letter">
-                <label class="form-check-label" for="force_cover_letter">Force cover letter generation</label>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <button type="button" id="toggleSidebar" class="btn btn-outline-light btn-sm">☰ History</button>
+        </div>
+        <div class="row">
+            <div class="col-4" id="sidebarCol">
+                <div class="card p-3">
+                    <h5>History</h5>
+                    <div id="historyList"></div>
+                </div>
             </div>
-            <button type="button" id="viewResults" class="btn btn-outline-light w-100 mb-2" style="display:none">View Last Results</button>
-            <button type="button" id="submit" class="btn btn-success w-100">Analyze</button>
+            <div class="col-8" id="mainCol">
+                <div class ="card p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Upload Resume (PDF)</label>
+                        <input type="file" class="form-control" id="resume" accept=".pdf">
+                    </div>
+                    <textarea id="job_description" class="form-control mb-3" rows="12" placeholder="Paste job description here..."></textarea>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="force_cover_letter">
+                        <label class="form-check-label" for="force_cover_letter">Force cover letter generation</label>
+                    </div>
+                    <button type="button" id="viewResults" class="btn btn-outline-light w-100 mb-2" style="display:none">View Last Results</button>
+                    <button type="button" id="submit" class="btn btn-success w-100">Analyze</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -43,6 +60,29 @@
 <script>
     const button = document.getElementById('submit')
     const viewResults = document.getElementById('viewResults')
+    const toggleSidebar = document.getElementById('toggleSidebar')
+    let sidebarOpen = true
+    
+    const analysisHistory = []
+
+    function addToHistory(jobDescription, result) {
+        const timestamp = new Date().toLocaleDateString()
+        const snippet = jobDescription.substring(0,40) + '...'
+        analysisHistory.push({ timestamp, snippet, result})
+
+        const historyList = document.getElementById('historyList')
+        const item = document.createElement('div')
+        item.className = 'history-item p-2 mb-2 rounded'
+        item.style.cursor = 'pointer'
+
+        item.innerHTML = `<small class="text-muted">${timestamp}</small><br>${snippet}`
+        item.addEventListener('click', () => {
+            document.getElementById('display').innerText = result
+            const modal = new bootstrap.Modal(document.getElementById('resultsModal'))
+            modal.show()
+        })
+        historyList.prepend(item)
+    }
 
     viewResults.addEventListener('click', () => {
         const modal = new bootstrap.Modal(document.getElementById('resultsModal'))
@@ -54,6 +94,12 @@
 
         const jobDescription = document.getElementById('job_description').value
         const forceCoverLetter = document.getElementById('force_cover_letter').checked
+        const resumeFile = document.getElementById('resume').files[0]
+        if (!resumeFile) {
+            const toast = new bootstrap.Toast(document.getElementById('errorToast'))
+            toast.show()
+            return
+        }
 
         if(!jobDescription.trim()){
             const toast = new bootstrap.Toast(document.getElementById('errorToast'))
@@ -66,6 +112,7 @@
 
         const formData = new FormData()
         formData.append("job_description", jobDescription)
+        formData.append('resume', resumeFile)
         if(forceCoverLetter){
             formData.append('force_cover_letter', 'on')
         }
@@ -79,11 +126,27 @@
             const modal = new bootstrap.Modal(document.getElementById('resultsModal'))
             modal.show()
             viewResults.style.display = 'block'
+            addToHistory(jobDescription, data.result)
         })
         .finally(() => {
             button.disabled = false
             button.innerHTML = 'Analyze'
         })
+    })
+    toggleSidebar.addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebarCol')
+        const main = document.getElementById('mainCol')
+
+        if(sidebarOpen){
+            sidebar.style.display = 'none'
+            main.className = 'col-12'
+            toggleSidebar.innerHTML = '☰ History'
+        } else {
+            sidebar.style.display = 'block'
+            main.className = 'col-8'
+            toggleSidebar.innerHTML = '✕ History'
+        }
+        sidebarOpen = !sidebarOpen
     })
 
 </script>  
@@ -91,7 +154,7 @@
     <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert">
         <div class="d-flex">
             <div class="toast-body">
-                Please paste a job description first.
+                Please fill in all fields before analyzing.
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>

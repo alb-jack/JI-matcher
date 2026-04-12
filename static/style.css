@@ -1,0 +1,26 @@
+#display {
+    white-space: pre-wrap;
+}
+
+.history-item {
+    background-color: #2b2b2b;
+    border: 1px solid #444;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.history-item:hover {
+    background-color: #3a3a3a;
+}
+
+#sidebarCol {
+    min-height: 100vh;
+    border-right: 1px solid #444;
+    padding: 1rem;
+}
+
+.row {
+    min-height: 100vh;
+    margin: 0;
+}

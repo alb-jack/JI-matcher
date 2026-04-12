@@ -10,16 +10,6 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 app = Flask(__name__)
 
-def load_resume():
-    doc = fitz.open("pdfs/Jack_Albert_Resume.pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    doc.close()
-    return text
-
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -27,12 +17,21 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     job_description = request.form.get("job_description")
-    resume = load_resume()
+    resume_file = request.files.get("resume")
+    if not resume_file:
+        return jsonify({"error": "No resume uploaded"}), 400
+    resume = ""
+    with fitz.open(stream=resume_file.read(), filetype="pdf") as doc:
+        for page in doc:
+            resume += page.get_text()
+
     cover_letter_override = request.form.get("force_cover_letter")
     if cover_letter_override:
         override_text = "Always generate a cover letter regardless of fit score."   
     else:
         override_text = "Use your judgment on whether a cover letter is needed."
+
+
     prompt = f"""
     You are a senior hiring manager and recruiter with 15+ years of experience. You evaluate candidates ruthlessly but fairly. You do not sugarcoat, you do not try to be nice, and you do not give generic advice. You think in terms of hiring decisions, risk, and signal strength.
     Evaluate the candidate below against the job description as if you are deciding whether to interview them.
